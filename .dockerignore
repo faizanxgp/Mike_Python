@@ -1,0 +1,47 @@
+# Git files
+.git
+.gitignore
+
+# Python cache
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+pip-log.txt
+
+# Virtual environments
+env
+venv
+ENV
+env.bak
+venv.bak
+
+# IDE files
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Development files
+*.log
+.env
+.env.local
+.env.development
+
+# Old structure (exclude from build)
+bapp/
+decorators/
+routers/
+
+# Large files that shouldn't be in container
+*.zip
+*.rar
+*.tar.gz
+
+# Data directories (will be mounted as volumes)
+data/
