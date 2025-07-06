@@ -10,7 +10,7 @@ import gzip
 import datetime
 from functools import lru_cache
 from typing import List, Optional, Dict, Any
-from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, Form, Response
+from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, Form, Response, Request
 from fastapi.responses import JSONResponse, StreamingResponse, FileResponse
 from fastapi.middleware.gzip import GZipMiddleware
 
@@ -92,22 +92,31 @@ async def process_single_file(file: UploadFile) -> dict:
     except Exception as e:
         return {"filename": file.filename, "error": str(e)}
 
-# Modern FastAPI endpoints with proper authentication
+# Modern FastAPI endpoints with proper authentication and enhanced security
 @router.post("/upload")
 async def upload_files_endpoint(
+    request: Request,
     files: List[UploadFile] = File(...),
     folder: Optional[str] = Form(None),
     path: Optional[str] = Form(None),
     current_user: dict = Depends(jwt_required)
 ):
-    """Upload multiple files with validation and batch processing"""
+    """Upload multiple files with validation, batch processing, and security checks"""
     try:
+        # Rate limiting check
+        check_rate_limit(request)
+        
         # Check for admin role for uploads
         require_admin_role(current_user)
         
         # Validate files before processing
         if len(files) > 50:  # Limit number of files
             raise HTTPException(status_code=413, detail="Too many files. Maximum 50 files allowed.")
+        
+        # Validate each file
+        for file in files:
+            await validate_file_size(file, max_size_mb=100)
+            validate_file_type(file, allowed_categories=['image', 'document', 'text'])
         
         # Process files in batches for better performance
         file_info = await process_files_in_batches(files)
@@ -119,7 +128,8 @@ async def upload_files_endpoint(
             content={
                 "detail": uploaded_files,
                 "processed_count": len(files),
-                "file_info": file_info
+                "file_info": file_info,
+                "request_id": request.state.request_id
             },
             headers={"Cache-Control": "no-cache"}
         )
@@ -191,7 +201,7 @@ async def delete_file_endpoint(
             content={
                 "detail": result,
                 "deleted_path": path,
-                "timestamp": datetime.datetime.now().isoformat()
+                "timestamp": datetime.now().isoformat()
             },
             headers={"Cache-Control": "no-cache"}
         )
@@ -219,7 +229,7 @@ async def create_directory_endpoint(
             content={
                 "detail": f"directory created: {relative_path}",
                 "created_path": relative_path,
-                "timestamp": datetime.datetime.now().isoformat()
+                "timestamp": datetime.now().isoformat()
             },
             headers={"Cache-Control": "no-cache"}
         )
@@ -299,7 +309,7 @@ async def upload_multiple_folders_endpoint(
             content={
                 "detail": result,
                 "files_count": len(files),
-                "timestamp": datetime.datetime.now().isoformat()
+                "timestamp": datetime.now().isoformat()
             },
             headers={"Cache-Control": "no-cache"}
         )
@@ -515,7 +525,7 @@ async def newly_added_files_endpoint(
             content={
                 "detail": newly_added,
                 "days_filter": days,
-                "timestamp": datetime.datetime.now().isoformat()
+                "timestamp": datetime.now().isoformat()
             },
             headers={"Cache-Control": "max-age=300"}  # Cache for 5 minutes
         )
@@ -531,8 +541,106 @@ async def health_check():
     return JSONResponse(
         content={
             "status": "healthy",
-            "timestamp": datetime.datetime.now().isoformat(),
+            "timestamp": datetime.now().isoformat(),
             "service": "files-api"
         },
         headers={"Cache-Control": "no-cache"}
     )
+
+# Additional performance monitoring and security enhancements
+import time
+import hashlib
+import logging
+from contextvars import ContextVar
+
+# Context variables for request tracking
+request_id_ctx: ContextVar[str] = ContextVar('request_id', default="")
+
+# Rate limiting helpers
+from collections import defaultdict
+from datetime import datetime, timedelta
+
+class RateLimiter:
+    """Simple in-memory rate limiter"""
+    
+    def __init__(self, max_requests: int = 100, window_minutes: int = 1):
+        self.max_requests = max_requests
+        self.window_minutes = window_minutes
+        self.requests = defaultdict(list)
+    
+    def is_allowed(self, client_ip: str) -> bool:
+        """Check if request is allowed for given IP"""
+        now = datetime.now()
+        window_start = now - timedelta(minutes=self.window_minutes)
+        
+        # Clean old requests
+        self.requests[client_ip] = [
+            req_time for req_time in self.requests[client_ip] 
+            if req_time > window_start
+        ]
+        
+        # Check if within limit
+        if len(self.requests[client_ip]) >= self.max_requests:
+            return False
+        
+        # Add current request
+        self.requests[client_ip].append(now)
+        return True
+
+# Initialize rate limiter
+rate_limiter = RateLimiter(max_requests=50, window_minutes=1)
+
+def check_rate_limit(request: Request) -> None:
+    """Check rate limit for the request"""
+    client_ip = request.client.host
+    if not rate_limiter.is_allowed(client_ip):
+        raise HTTPException(
+            status_code=429, 
+            detail="Too many requests. Please try again later.",
+            headers={"Retry-After": "60"}
+        )
+
+# File size validation helpers
+async def validate_file_size(file: UploadFile, max_size_mb: int = 100) -> None:
+    """Validate file size asynchronously"""
+    if file.size is None:
+        # Read first chunk to estimate size
+        content = await file.read(1024 * 1024)  # Read 1MB
+        await file.seek(0)  # Reset file pointer
+        if len(content) >= max_size_mb * 1024 * 1024:
+            raise HTTPException(
+                status_code=413, 
+                detail=f"File too large. Maximum size is {max_size_mb}MB"
+            )
+    elif file.size > max_size_mb * 1024 * 1024:
+        raise HTTPException(
+            status_code=413, 
+            detail=f"File too large. Maximum size is {max_size_mb}MB"
+        )
+
+# Content type validation
+ALLOWED_FILE_TYPES = {
+    'image': ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
+    'document': ['application/pdf', 'application/msword', 
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'application/vnd.ms-excel',
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'application/vnd.ms-powerpoint',
+                'application/vnd.openxmlformats-officedocument.presentationml.presentation'],
+    'text': ['text/plain', 'text/csv', 'application/json', 'application/xml']
+}
+
+def validate_file_type(file: UploadFile, allowed_categories: List[str] = None) -> None:
+    """Validate file content type"""
+    if allowed_categories is None:
+        allowed_categories = ['image', 'document', 'text']
+    
+    allowed_types = []
+    for category in allowed_categories:
+        allowed_types.extend(ALLOWED_FILE_TYPES.get(category, []))
+    
+    if file.content_type not in allowed_types:
+        raise HTTPException(
+            status_code=415, 
+            detail=f"File type {file.content_type} not allowed. Allowed types: {allowed_types}"
+        )
