@@ -21,8 +21,8 @@ import openpyxl
 import pptx
 from fastapi.responses import HTMLResponse
 
-from routers.utils.misc_files_utils import *
-from routers.utils.misc_keycloak_utils import *
+from app.routers.utils.misc_files_utils import *
+from app.routers.utils.misc_keycloak_utils import *
 
 
 # Cache for PDF documents to avoid reopening frequently
@@ -685,7 +685,7 @@ async def get_docx_page(path, page_num):
         if result.returncode != 0 or not os.path.isfile(temp_pdf):
             raise HTTPException(status_code=500, detail=f"DOCX to PDF conversion failed: {result.stderr.decode('utf-8')}")
         # Use get_pdf_page to render the page
-        from routers.utils.api_files_utils import get_pdf_page
+        from app.routers.utils.api_files_utils import get_pdf_page
         page_data = await get_pdf_page(temp_pdf, page_num)
         # Add a hint that this is a DOCX preview via PDF
         page_data["source"] = "docx->pdf"

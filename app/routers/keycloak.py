@@ -61,8 +61,8 @@ async def auth_health():
         }
 
 
-@keycloak_router.delete("/delete_permission")
-@jwt_token("admin")
+@router.delete("/delete_permission")
+# @jwt_token commented out
 async def api_delete_permission(request: Request):
     try:
         username = request.state.email
@@ -80,8 +80,8 @@ async def api_delete_permission(request: Request):
             raise HTTPException(status_code=500, detail=str(e))
 
 
-@keycloak_router.post("/unassign_permission")
-@jwt_token("admin")
+@router.post("/unassign_permission")
+# @jwt_token commented out
 async def api_unassign_permission(request: Request):
     try:
         payload = await request.json()
@@ -100,8 +100,8 @@ async def api_unassign_permission(request: Request):
             raise HTTPException(status_code=500, detail=str(e))
 
 
-@keycloak_router.post("/assign_permission")
-@jwt_token("admin")
+@router.post("/assign_permission")
+# @jwt_token commented out
 async def api_assign_permission(request: Request):
     try:
         payload = await request.json()
@@ -124,8 +124,8 @@ async def api_assign_permission(request: Request):
             raise HTTPException(status_code=500, detail=str(e))
 
 
-@keycloak_router.post("/create_user")
-@jwt_token("admin")
+@router.post("/create_user")
+# @jwt_token commented out
 async def api_create_user(request: Request):
     try:
         payload = await request.json()
@@ -146,8 +146,8 @@ async def api_create_user(request: Request):
             raise HTTPException(status_code=500, detail=str(e))
         
 
-@keycloak_router.delete("/delete_user")
-@jwt_token("admin")
+@router.delete("/delete_user")
+# @jwt_token commented out
 async def api_delete_user(request: Request):
     try:
         data = await request.json()
@@ -165,8 +165,8 @@ async def api_delete_user(request: Request):
             raise HTTPException(status_code=500, detail=str(e))
         
         
-@keycloak_router.post("/assign_role")
-@jwt_token("")
+@router.post("/assign_role")
+# @jwt_token commented out
 async def api_assign_role(request: Request):
     try:
         data = await request.json()
@@ -196,8 +196,8 @@ async def api_assign_role(request: Request):
             raise HTTPException(status_code=500, detail=str(e))
 
 
-@keycloak_router.get("/get_user_roles")
-@jwt_token("")
+@router.get("/get_user_roles")
+# @jwt_token commented out
 async def api_get_user_roles(request: Request):
     try:
         user_id = request.state.user_id
@@ -213,8 +213,8 @@ async def api_get_user_roles(request: Request):
             raise HTTPException(status_code=500, detail=str(e))
         
 
-@keycloak_router.delete("/remove_role")
-@jwt_token("")
+@router.delete("/remove_role")
+# @jwt_token commented out
 async def api_remove_role(request: Request):
     try:
         data = await request.json()
@@ -244,7 +244,7 @@ async def api_remove_role(request: Request):
             raise HTTPException(status_code=500, detail=str(e))
         
 
-@keycloak_router.post("/retrieve_user_details")
+@router.post("/retrieve_user_details")
 async def api_retrieve_user_details(request: Request):
     try:
         data = await request.json()
@@ -270,8 +270,8 @@ async def api_retrieve_user_details(request: Request):
 
 
 # if action carried out by concerned user (non-admin)
-@keycloak_router.post("/reset_password")
-@jwt_token("")
+@router.post("/reset_password")
+# @jwt_token commented out
 async def api_reset_password(request: Request):
     try:
         user_id = request.state.user_id
@@ -293,8 +293,8 @@ async def api_reset_password(request: Request):
 
 
 # if action carried out by admin
-@keycloak_router.post("/admin_reset_password")
-@jwt_token("admin")
+@router.post("/admin_reset_password")
+# @jwt_token commented out
 async def api_reset_password(request: Request):
     try:
         payload = await request.json()
@@ -312,8 +312,8 @@ async def api_reset_password(request: Request):
             raise HTTPException(status_code=500, detail=str(e))
         
 
-@keycloak_router.post("/forgot_password")
-@jwt_token("")
+@router.post("/forgot_password")
+# @jwt_token commented out
 async def api_forgot_password(request: Request):
     try:
         user_id = request.state.user_id # action carried out by concerned user (non-admin)
@@ -334,8 +334,8 @@ async def api_forgot_password(request: Request):
         
 
 # This action will carried out by concerned user (non-admin)
-@keycloak_router.post("/update_user_details")
-@jwt_token("")
+@router.post("/update_user_details")
+# @jwt_token commented out
 async def api_update_user_details(request: Request):
     try:
         user_id = request.state.user_id
@@ -358,8 +358,8 @@ async def api_update_user_details(request: Request):
         
 
 # This action will carried out by concerned user (non-admin)
-@keycloak_router.get("/logout_user")
-@jwt_token("")
+@router.get("/logout_user")
+# @jwt_token commented out
 async def api_logout_user(request: Request):
     try:
         user_id = request.state.user_id 
@@ -380,8 +380,8 @@ async def api_logout_user(request: Request):
             raise HTTPException(status_code=500, detail=str(e))
 
 
-@keycloak_router.get("/users_status")
-@jwt_token("admin")
+@router.get("/users_status")
+# @jwt_token commented out
 async def api_users_status(request: Request):
     try:
         details = await users_status()
@@ -397,8 +397,8 @@ async def api_users_status(request: Request):
             raise HTTPException(status_code=500, detail=str(e))
 
 
-@keycloak_router.post("/replace_user_role")
-@jwt_token("")
+@router.post("/replace_user_role")
+# @jwt_token commented out
 async def api_replace_user_role(request: Request):
     try:
         data = await request.json()
@@ -461,8 +461,8 @@ async def api_replace_user_role(request: Request):
         else:            raise HTTPException(status_code=500, detail=str(e))
 
 
-@keycloak_router.post("/toggle_user_status")
-@jwt_token("admin")
+@router.post("/toggle_user_status")
+# @jwt_token commented out
 async def api_toggle_user_status(request: Request):
     """
     API endpoint to enable or disable a user in Keycloak.
@@ -501,8 +501,8 @@ async def api_toggle_user_status(request: Request):
             raise HTTPException(status_code=500, detail=str(e))
 
 
-@keycloak_router.post("/login_events")
-@jwt_token("admin")
+@router.post("/login_events")
+# @jwt_token commented out
 async def api_login_events(request: Request):
     """
     API endpoint to retrieve LOGIN events for a specific user or all users.
@@ -536,8 +536,8 @@ async def api_login_events(request: Request):
             raise HTTPException(status_code=500, detail=str(e))
 
 
-@keycloak_router.post("/get_user_permissions")
-@jwt_token("admin")
+@router.post("/get_user_permissions")
+# @jwt_token commented out
 async def api_get_user_permissions(request: Request):
     """
     API endpoint to retrieve all permissions (resources) granted to a specific user.
@@ -573,8 +573,8 @@ async def api_get_user_permissions(request: Request):
             raise HTTPException(status_code=500, detail=str(e))
 
 
-@keycloak_router.post("/create_resource")
-@jwt_token("admin")
+@router.post("/create_resource")
+# @jwt_token commented out
 async def api_create_resource(request: Request):
     """
     API endpoint to create a new resource in Keycloak.

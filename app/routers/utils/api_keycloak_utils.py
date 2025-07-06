@@ -1,7 +1,7 @@
 from fastapi import HTTPException
 
-from routers.utils.misc_keycloak_utils import *
-from routers.utils.keycloak_vars import *
+from app.routers.utils.misc_keycloak_utils import *
+from app.routers.utils.keycloak_vars import *
 
 
 async def delete_permission(username: str, access_token=None):

@@ -11,7 +11,7 @@ from jwcrypto.jwt import JWTExpired
 from jwcrypto.jws import InvalidJWSObject, InvalidJWSSignature
 from datetime import datetime
 
-from routers.utils.keycloak_vars import *
+from app.routers.utils.keycloak_vars import *
 
 
 async def get_resources_in_permission(permission_id: str, access_token=None):

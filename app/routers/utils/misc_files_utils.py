@@ -323,7 +323,7 @@ async def process_directory_structure(structure, base_dir, current_path, file_ma
     """
     try:
         # Import here to avoid circular imports
-        from routers.utils.misc_keycloak_utils import create_resource
+        from app.routers.utils.misc_keycloak_utils import create_resource
         
         # Process files in current directory
         if "files" in structure and structure["files"]:
@@ -405,7 +405,7 @@ async def update_user_recent_file_attribute(user_id: str, username: str, file_pa
     Update the user's 'recent_files' attribute in Keycloak with the downloaded file path.
     Appends to existing recent_files list if it exists, otherwise creates a new list.
     """
-    from routers.utils.api_keycloak_utils import update_user_details, retrieve_user_details
+    from app.routers.utils.api_keycloak_utils import update_user_details, retrieve_user_details
     
     try:
         # First, retrieve current user details to get existing attributes
