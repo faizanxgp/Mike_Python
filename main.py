@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import CORS_ORIGINS, ENVIRONMENT, DEBUG
-from app.routers import files, keycloak
+from app.routers import files_clean, keycloak
 
 # Create FastAPI application instance
 app = FastAPI(
@@ -27,7 +27,7 @@ app.add_middleware(
 )
 
 # Include routers
-app.include_router(files.router, prefix="/api/files", tags=["files"])
+app.include_router(files_clean.router, prefix="/api/files", tags=["files"])
 app.include_router(keycloak.router, prefix="/api/auth", tags=["authentication"])
 
 # Health check endpoints
