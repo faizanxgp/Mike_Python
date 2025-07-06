@@ -4,13 +4,9 @@ Handles upload, download, preview, and file operations with proper authenticatio
 """
 
 import traceback
-from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, Request, Form
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, Form
+from fastapi.responses import JSONResponse
 from typing import List, Optional
-import os
-import shutil
-from datetime import datetime
-from pathlib import Path
 
 from app.core.config import REMOTE_DIR, BACKUP_DIR, PREVIEW_DIR
 from app.core.auth import jwt_required
@@ -28,6 +24,17 @@ from app.routers.utils.api_files_utils import (
 router = APIRouter()
 file_service = FileService()
 
+# Helper functions for role-based authorization
+def check_admin_role(current_user: dict) -> bool:
+    """Check if user has admin role"""
+    user_roles = current_user.get("resource_access", {}).get("benyon_fe", {}).get("roles", [])
+    return "admin" in user_roles
+
+def require_admin_role(current_user: dict) -> None:
+    """Raise HTTPException if user doesn't have admin role"""
+    if not check_admin_role(current_user):
+        raise HTTPException(status_code=403, detail="Admin role required for this operation")
+
 # Modern FastAPI endpoints with proper authentication
 @router.post("/upload")
 async def upload_files_endpoint(
@@ -39,9 +46,7 @@ async def upload_files_endpoint(
     """Upload multiple files with validation"""
     try:
         # Check for admin role for uploads
-        user_roles = current_user.get("resource_access", {}).get("benyon_fe", {}).get("roles", [])
-        if "admin" not in user_roles:
-            raise HTTPException(status_code=403, detail="Admin role required for file uploads")
+        require_admin_role(current_user)
         
         uploaded_files = await upload_files(folder, files, path or "")
         return JSONResponse(content={"detail": uploaded_files})
@@ -57,6 +62,8 @@ async def search_files_endpoint(
     try:
         results = await search_files(search_str)
         return JSONResponse(content={"detail": results})
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -72,6 +79,8 @@ async def download_file_endpoint(
         
         file_response = await download_file(path, user_id, username)
         return file_response
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -83,12 +92,12 @@ async def delete_file_endpoint(
     """Delete a file or directory"""
     try:
         # Check for admin role
-        user_roles = current_user.get("resource_access", {}).get("benyon_fe", {}).get("roles", [])
-        if "admin" not in user_roles:
-            raise HTTPException(status_code=403, detail="Admin role required for deletion")
+        require_admin_role(current_user)
         
         result = await delete_file_and_dir(path)
         return JSONResponse(content={"detail": result})
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -100,9 +109,7 @@ async def create_directory_endpoint(
     """Create a new directory"""
     try:
         # Check for admin role
-        user_roles = current_user.get("resource_access", {}).get("benyon_fe", {}).get("roles", [])
-        if "admin" not in user_roles:
-            raise HTTPException(status_code=403, detail="Admin role required for directory creation")
+        require_admin_role(current_user)
         
         relative_path = await create_dir(path)
         return JSONResponse(content={"detail": f"directory created: {relative_path}"})
@@ -151,9 +158,7 @@ async def upload_multiple_folders_endpoint(
     """Upload multiple folders with complex directory structures"""
     try:
         # Check for admin role
-        user_roles = current_user.get("resource_access", {}).get("benyon_fe", {}).get("roles", [])
-        if "admin" not in user_roles:
-            raise HTTPException(status_code=403, detail="Admin role required for bulk uploads")
+        require_admin_role(current_user)
         
         if not directory_structure:
             raise HTTPException(status_code=400, detail="directory_structure field is required")
