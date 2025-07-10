@@ -8,8 +8,14 @@ import asyncio
 import aiofiles
 import gzip
 import datetime
+import time
+import hashlib
+import logging
 from functools import lru_cache
 from typing import List, Optional, Dict, Any
+from contextvars import ContextVar
+from collections import defaultdict
+from datetime import datetime, timedelta
 from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, Form, Response, Request
 from fastapi.responses import JSONResponse, StreamingResponse, FileResponse
 from fastapi.middleware.gzip import GZipMiddleware
@@ -124,12 +130,15 @@ async def upload_files_endpoint(
         # Upload files using existing utility
         uploaded_files = await upload_files(folder, files, path or "")
         
+        # Generate request ID for tracking
+        request_id = hashlib.md5(f"{time.time()}{request.client.host}".encode()).hexdigest()[:8]
+        
         return JSONResponse(
             content={
                 "detail": uploaded_files,
                 "processed_count": len(files),
                 "file_info": file_info,
-                "request_id": request.state.request_id
+                "request_id": request_id
             },
             headers={"Cache-Control": "no-cache"}
         )
@@ -547,18 +556,8 @@ async def health_check():
         headers={"Cache-Control": "no-cache"}
     )
 
-# Additional performance monitoring and security enhancements
-import time
-import hashlib
-import logging
-from contextvars import ContextVar
-
 # Context variables for request tracking
 request_id_ctx: ContextVar[str] = ContextVar('request_id', default="")
-
-# Rate limiting helpers
-from collections import defaultdict
-from datetime import datetime, timedelta
 
 class RateLimiter:
     """Simple in-memory rate limiter"""
