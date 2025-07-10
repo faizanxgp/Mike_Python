@@ -5,15 +5,17 @@ services:
   benyon-backend:
     build: .
     container_name: benyon-backend
+    ports:
+      - "8000:8000"
     environment:
       - KEYCLOAK_URL=http://keycloak:8080
       - KEYCLOAK_REALM_NAME=team_online
       - KEYCLOAK_BACKEND_CLIENT_ID=benyon_be
       - KEYCLOAK_BACKEND_CLIENT_SECRET=KpS08hhGvpAII7Z3CbXZC4QiXCmQfInL
     volumes:
-      - ./data/remote:/app/remote
-      - ./data/backup:/app/backup
-      - ./data/preview:/app/preview
+      - ./data/remote:/app/data/remote
+      - ./data/backup:/app/data/backup
+      - ./data/preview:/app/data/preview
     depends_on:
       - keycloak
     networks:

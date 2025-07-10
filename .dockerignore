@@ -29,9 +29,12 @@ Thumbs.db
 
 # Development files
 *.log
-.env
 .env.local
 .env.development
+
+# Allow production .env and secrets.env
+!.env
+!secrets.env
 
 # Old structure (exclude from build)
 bapp/
