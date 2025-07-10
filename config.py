@@ -13,7 +13,7 @@ KEYCLOAK_BACKEND_CLIENT_SECRET = config("KEYCLOAK_BACKEND_CLIENT_SECRET", defaul
 # Application Configuration
 PORT = config("PORT", default=8000, cast=int)
 ENVIRONMENT = config("ENVIRONMENT", default="development")
-DEBUG = config("DEBUG", default=True if ENVIRONMENT == "development" else False, cast=bool)
+DEBUG = config("DEBUG", default=True, cast=bool)
 
 # File Storage Paths
 DATA_DIR = os.path.join(BASE_DIR, "data")
